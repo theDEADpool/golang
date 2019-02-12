@@ -45,7 +45,7 @@
 
 **增加和修改**
 
-	m := make(map[int]string 10)
+	m := make(map[int]string, 10)
 	m[0] = "ok"
 
 	fmt.Println(m)
