@@ -54,7 +54,16 @@ cancelCtx：保存父Context。
 1.返回创建timerCtx时指定的超时时间。
 
 *cancel方法*  
-1.调用c.cancelCtx.cancel方法，取消了当前Context的父Context。同时由于cancelCtx的机制，当前Context作为子Context也被取消了。所以可以看到该方法里没有单独取消当前Context。
+1.调用c.cancelCtx.cancel方法，取消了当前Context的父Context。同时由于cancelCtx的机制，当前Context作为子Context也被取消了。所以可以看到该方法里没有单独取消当前Context。  
+2.停止超时定时器。
+
+**valueCtx**
+
+    type valueCtx struct {
+        Context
+        key, val interface{}
+    }
+key, val都是空接口，理论上可以对应任意类型。但key要求必须是可比较的类型，同时不能为nil。
 
 ## API接口
 **Background**  
@@ -82,7 +91,7 @@ cancelCtx：保存父Context。
 
 **WithDeadline**  
 入参parent：父Context。  
-入参d：超时时间。  
+入参d：超时时间，这个不是时间间隔，而是具体的超时时间。  
 出参：可能是cancelCtx数据结构，也可能是timerCtx数据结构。  
 出参：取消函数。  
 1.如果父Context的超时时间存在且比入参指定的超时时间早的话，那么函数实际创建一个withCancel的结构。这样父Context超时之后直接通过withCancel的机制取消所有的子Context即可。  
@@ -92,3 +101,21 @@ cancelCtx：保存父Context。
 5.如果当前时间没有超过入参指定的超时时间，那么创建一个定时器。超时之后调用cancel方法。  
 6.由于cancel方法也是作为返回值返回的。说明timerCtx类型的Context也是可以人工取消，不等待定时器超时。
 
+**WithTimeout**  
+入参parent：父Context。  
+入参timeout：超时的时间间隔。  
+1.实际调用的就是WithDeadline函数。
+
+**WithValue**
+入参parent：父Context。
+入参key：键值对key。  
+入参val：键值对value。  
+出参：创建的新valueCtx结构。  
+1.传入的key不能为nil，同时必须是可以比较的的类型。
+2.创建新的valueCtx数据结构。
+
+**Value**  
+入参key：键值对的key。  
+出参：键值对的value。  
+1.将Context中保存的key与输入的key进行比较。如果相等，则返回Context中对应的value。  
+2.如果输入key与保存的key不相等，则返回c.Context中key对应的值。一般情况下父Context的key是空值。
